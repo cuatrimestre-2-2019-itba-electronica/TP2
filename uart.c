@@ -146,7 +146,23 @@ void UART_Send_Data(uint8_t id, unsigned char tx_data)
 	uartch->SFIFO;
 }
 
-void UART_FIFO(uint8_t id){
+// Si el dato que sale de CAN ya esta un (char *)/String seria mas facil de mandarlo directamente con uartWriteMsg (sin olvidar de agregar el numero del grupo)
+void UART_send_board_info(int gn, int rolido, int cabeceo, int orientacion){
+
+	uint8_t uart_id = 0;
+
+	UART_Send_Data(uart_id,'G');
+	UART_Send_Data(uart_id, (unsigned char) gn);
+	UART_Send_Data(uart_id,'R');
+	UART_Send_Data(uart_id, (unsigned char) rolido);
+	UART_Send_Data(uart_id,'C');
+	UART_Send_Data(uart_id, (unsigned char) cabeceo);
+	UART_Send_Data(uart_id,'O');
+	UART_Send_Data(uart_id, (unsigned char) orientacion);
+	UART_Send_Data(uart_id,'\r\n');
+}
+
+/*void UART_FIFO(uint8_t id){
 	UART_Type * uartch = getUART(id);
 	while(1){
 		uartch->D = (uint8_t) 'dddddd\r\n';
@@ -158,7 +174,7 @@ void UART_FIFO(uint8_t id){
 		}
 
 	}
-}
+}*/
 
 uint8_t uartWriteMsg(uint8_t id, const char* msg, uint8_t cant){
 	for(uint8_t i=0;i<cant;i++){
