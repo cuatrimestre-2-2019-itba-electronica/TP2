@@ -95,7 +95,12 @@ uint8_t SPI_driver_sendRecive(uint8_t * data2end, uint8_t size,uint8_t * recived
 		SPI_driver_SPI[0]->SR=(SPI_driver_SPI[0]->SR & (~SPI_SR_TCF_MASK) ) | SPI_SR_TCF(1) ; //reinicio el tcf
 		SPI_driver_SPI[0]->PUSHR=pushr2send;
 		startTrasmissionReception();
+
+
 		while(!(SPI_driver_SPI[0]->SR & SPI_SR_TCF_MASK));//espero a que se envie el frame
+
+		//SPI_driver_SPI[0]->SR= (SPI_driver_SPI[0]->SR & ~SPI_SR_TCF_MASK)| SPI_SR_TCF_MASK; //si no anda borrame
+
 		if(recivedData!=NULL){
 			if(SPI_driver_SPI[0]->SR & SPI_SR_RXCTR_MASK){
 				recivedData[dataRecived]=SPI_driver_SPI[0]->POPR;
