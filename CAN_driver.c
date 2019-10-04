@@ -38,17 +38,13 @@
 
 void irqt(void){
 	char readf[30];
-	static int edge=1;
-	if(edge){
-		edge=0;
-		CAN_READ(0X2C, readf, 1+2);
-		CAN_BIT_MODIFY(0X2C,0X01,0x00);//reseteo rl flag
-		CAN_READ(0X60, readf, 14+2);
-		CAN_READ(0X2C, readf, 1+2);
 
-	}else{
-		edge=1;
-	}
+
+	CAN_READ(0X2C, readf, 1+2);
+	CAN_BIT_MODIFY(0X2C,0X01,0x00);//reseteo rl flag
+	CAN_READ(0X60, readf, 14+2);
+	CAN_READ(0X2C, readf, 1+2);
+
 
 
 }
@@ -118,7 +114,7 @@ void init_CAN(int ID)
 	char u[10];
 	int t=0x04;
 	CAN_RESET();//reseteo el controlador y lo pongo en modo configuración
-	CAN_BIT_MODIFY(CANCTRL_REG,0xEF,0x8C);
+	CAN_BIT_MODIFY(CANCTRL_REG,0xEF,0x8C);//modo configuracion
 	//Seteo el bitrate y los time quantas
 	CAN_BIT_MODIFY(CNF1_REG,0xFF,0X07);//aca seteo el time quanta como 1us
 	//CAN_READ(CNF1_REG,u,3);
@@ -128,10 +124,10 @@ void init_CAN(int ID)
 	//CAN_READ(CNF3_REG,u,3);
 	//VER QUE hago con TXRTSCTRL register
 
-	CAN_BIT_MODIFY(0X60,0x60,0x60);
+	CAN_BIT_MODIFY(0X60,0x60,0x60);//habilito filtro y mascara para el buffer cero
 
-	CAN_WRITE(TXB0CTRL_REG,&t,1);
-	CAN_READ(TXB0CTRL_REG, temp, 3);
+	//CAN_WRITE(TXB0CTRL_REG,&t,1);
+
 
 	buffer[0]=0x00;
 	buffer[1]=0x00;
@@ -145,16 +141,16 @@ void init_CAN(int ID)
 	CAN_BIT_MODIFY(0X2B,0x01,0x01);
 
 
-	CAN_BIT_MODIFY(CANCTRL_REG,0xEF,0x0C);
+	//CAN_BIT_MODIFY(CANCTRL_REG,0xEF,0x0C);
 
-	//CAN_BIT_MODIFY(CANCTRL_REG,0xEF,0x4C);//lopback
-
-
+	CAN_BIT_MODIFY(CANCTRL_REG,0xEF,0x4C);//lopback
 
 
 
-	gpioMode(IRQ_CAN, INPUT);
-	gpioIRQ(IRQ_CAN, GPIO_IRQ_MODE_BOTH_EDGES, irqt);
+
+
+	gpioMode(IRQ_CAN, INPUT_PULLUP);
+	gpioIRQ(IRQ_CAN, GPIO_IRQ_MODE_FALLING_EDGE, irqt);
 
 
 }

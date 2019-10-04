@@ -99,7 +99,7 @@ uint8_t SPI_driver_sendRecive(uint8_t * data2end, uint8_t size,uint8_t * recived
 
 		while(!(SPI_driver_SPI[0]->SR & SPI_SR_TCF_MASK));//espero a que se envie el frame
 
-		//SPI_driver_SPI[0]->SR= (SPI_driver_SPI[0]->SR & ~SPI_SR_TCF_MASK)| SPI_SR_TCF_MASK; //si no anda borrame
+		SPI_driver_SPI[0]->SR= (SPI_driver_SPI[0]->SR & ~SPI_SR_TCF_MASK)| SPI_SR_TCF_MASK; //si no anda borrame
 
 		if(recivedData!=NULL){
 			if(SPI_driver_SPI[0]->SR & SPI_SR_RXCTR_MASK){
