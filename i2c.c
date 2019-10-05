@@ -15,8 +15,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <fsl_clock.h> // todo: borrar, debug
-static const clock_ip_name_t s_i2cClocks[] = I2C_CLOCKS; //todo: borrar, debug
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -53,12 +51,32 @@ static i2c_interrupt_t I2C_get_interrupt_type_non_blocking(I2C_Type * base);
  *******************************************************************************
  ******************************************************************************/
 
+
+//aca pongo las funciones que me pedistes
+//fin
+
 void I2C_Init(I2C_Type * base, I2C_config_t * config)
 {
 	if(base == NULL){return;}	//todo: assert???
 
 	//prender clock //todo: hacer con la otra funcion, debug
-    CLOCK_EnableClock(s_i2cClocks[I2C_GetInstance(base)]);
+    //CLOCK_EnableClock(s_i2cClocks[I2C_GetInstance(base)]);
+	//podria hacer algo mas elegante tipo un for pero creo que esto es lo mas directo
+	SIM_Type * s = SIM_BASE_PTRS;
+	switch((uint32_t)base)
+	{
+		case I2C0_BASE:
+			s->SCGC4 |= SIM_SCGC4_I2C0_MASK;
+			break;
+		case I2C1_BASE:
+			s->SCGC4 |= SIM_SCGC4_I2C1_MASK;
+			break;
+		case I2C2_BASE:
+			s->SCGC1 |= SIM_SCGC1_I2C2_MASK;
+			break;
+		default:
+			break;
+	}
 
     //address register 1
 	base->A1 = config->master ? 0 : (config->address << 1);
@@ -89,7 +107,7 @@ void I2C_Init(I2C_Type * base, I2C_config_t * config)
 	base->C1 = I2C_C1_IICEN(1) | I2C_C1_IICIE(1);
 
 	//podria hacer algo mas elegante tipo un for pero creo que esto es lo mas directo
-	IRQn_Type * p = I2C_IRQS;
+/*	IRQn_Type * p = I2C_IRQS;
 	switch((uint32_t)base)
 	{
 		case I2C0_BASE:
@@ -103,10 +121,9 @@ void I2C_Init(I2C_Type * base, I2C_config_t * config)
 			break;
 		default:
 			break;
-	}
+	}*/
 
 }
-
 
 bool I2C_TXRX_master_blocking(  I2C_Type * base,
 								uint8_t address,
@@ -119,7 +136,7 @@ bool I2C_TXRX_master_blocking(  I2C_Type * base,
 	bool should_i_read = rx_buf && rx_buf_len;
 
 	//si no hay nada que hacer, devuelvo false;
-	if(!should_i_read && !should_i_read){
+	if(!should_i_write && !should_i_read){
 		return false;
 	}
 
@@ -127,7 +144,6 @@ bool I2C_TXRX_master_blocking(  I2C_Type * base,
 	 * ADDRESS TRANSFER *
 	 ********************/
 	//Genero start con MST y seteo TX para transmitir la address
-	//todo: pregunta pagina 1550: immediate significa que lo puedo mandar los dos juntos o que los mando uno seguidod el otro pero con un delay en el medio?
 	base->C1 |= (I2C_C1_MST_MASK | I2C_C1_TX_MASK);
 	if(I2C_get_interrupt_type_blocking(base) != I2C_INT_STARTF){ return false; }
 
@@ -149,10 +165,6 @@ bool I2C_TXRX_master_blocking(  I2C_Type * base,
 			//espero hasta que se reciba bien. Si no se recibe bien, indico que hubo error
 			if(I2C_get_interrupt_type_blocking(base) != I2C_INT_TCF){ return false; }
 		}
-	} else {
-		//genero un stop
-		base->C1 &= ~(I2C_C1_MST_MASK);
-		if(!(I2C_get_interrupt_type_blocking(base) == I2C_INT_STOPF)){ return false; }
 	}
 
 	/********************************
@@ -168,6 +180,10 @@ bool I2C_TXRX_master_blocking(  I2C_Type * base,
 			base->D = address << 1 | (uint8_t)should_i_read;
 
 			if(I2C_get_interrupt_type_blocking(base) != I2C_INT_TCF){ return false; }
+		} else {	//todo: esta mal
+			//genero un stop
+			base->C1 &= ~(I2C_C1_MST_MASK);
+			if(!(I2C_get_interrupt_type_blocking(base) == I2C_INT_STOPF)){ return false; }
 		}
 	}
 
@@ -179,7 +195,7 @@ bool I2C_TXRX_master_blocking(  I2C_Type * base,
 		base->C1 &= ~I2C_C1_TX_MASK;
 
 		//dummy read
-		if(tx_buf_len == 1)	{ base->C1 |= I2C_C1_TXAK_MASK; }
+		if(rx_buf_len == 1)	{ base->C1 |= I2C_C1_TXAK_MASK; }
 		else 				{ base->C1 &= ~I2C_C1_TXAK_MASK; }
 
 		//dummy read para generar la recibida del nuevo dato
@@ -187,22 +203,22 @@ bool I2C_TXRX_master_blocking(  I2C_Type * base,
 		_ = base->D;
 		if(I2C_get_interrupt_type_blocking(base) != I2C_INT_TCF){ return false; }
 
-		for(int i = 0; i < tx_buf_len; i++){
+		for(int i = 0; i < rx_buf_len; i++){
 			//NACK para el ultimo byte recibido, ACK para los demas
-			if(i + 2 == tx_buf_len)	{ base->C1 |= I2C_C1_TXAK_MASK; }
+			if(i + 2 == rx_buf_len)	{ base->C1 |= I2C_C1_TXAK_MASK; }
 			else 					{ base->C1 &= ~I2C_C1_TXAK_MASK; }
 
 			//STOP cuando ya recibi todos los bytes
-			if(i + 1 == tx_buf_len) {
+			if(i + 1 == rx_buf_len) {
 				base->C1 &= ~I2C_C1_MST_MASK;
 				if(I2C_get_interrupt_type_blocking(base) != I2C_INT_STOPF){ return false; }
 			}
 
-			tx_buf[0] = base->D;
+			rx_buf[i] = base->D;
 
 			//solo busco la interrupcion antes de haber mandado el stop.
 			//despues del stop no recibo bytes nuevos => no interrumpe.
-			if(i + 1 < tx_buf_len){
+			if(i + 1 < rx_buf_len){
 				if(I2C_get_interrupt_type_blocking(base) != I2C_INT_TCF){ return false; }
 			}
 

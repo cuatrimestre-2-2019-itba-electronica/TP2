@@ -22,17 +22,27 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define FXOS8700CQ_STATUS 		0x00
-#define FXOS8700CQ_WHOAMI 		0x0D
-#define FXOS8700CQ_XYZ_DATA_CFG 0x0E
-#define FXOS8700CQ_CTRL_REG1 	0x2A
-#define FXOS8700CQ_M_CTRL_REG1 	0x5B
-#define FXOS8700CQ_M_CTRL_REG2 	0x5C
-#define FXOS8700CQ_WHOAMI_VAL 	0xC7
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
+
+typedef struct {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+} FXOS_magnet_data_t;
+
+typedef struct {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+} FXOS_accel_data_t;
+
+typedef struct
+{
+	FXOS_magnet_data_t magnet;
+	FXOS_accel_data_t  accel;
+} FXOS_data_t;
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -47,6 +57,8 @@
  ******************************************************************************/
 
 void FXOS_init();
+
+FXOS_data_t	FXOS_get_data();
 
 /*******************************************************************************
  ******************************************************************************/
