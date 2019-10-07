@@ -172,7 +172,7 @@ class AppOgl(OpenGLFrame):
 class SerialHandler:
     def __init__(self, _placas):
         self.connected = False
-        self.port = 'COM9'   #'/dev/cu.usbmodemSDA9077DE5F1'
+        self.port = 'COM11'   #'/dev/cu.usbmodemSDA9077DE5F1'
         self.baud = 9600
 #        self.ser = serial.Serial(self.port, self.baud)
         self.placas = _placas
@@ -180,11 +180,7 @@ class SerialHandler:
 
     def read_data(self):
        try:
-            if (self.ser.inWaiting() > 0):  # if incoming bytes are waiting to be read from the serial input buffer
-
-                return self.ser.read(self.ser.inWaiting()).decode('ascii')  # read the bytes and convert from binary array to ASCII
-            else:
-                return ''
+            return comunic.readline().decode('utf-8')
        except:
             print('Error de lectura')
             return ''
@@ -196,14 +192,19 @@ class SerialHandler:
         iR = data.find('R')
         iC = data.find('C')
         iO = data.find('O')
+        end = data.find('\r')
 
         gn = int(data[iG + 1:iR])
         # self.placas[gn].rolido = int(data[iR + 1:iC])
         # self.placas[gn].cabeceo = int(data[iC + 1:iO])
         # self.placas[gn].orientacion = int(data[iO + 1:])
-        rotations[gn].roll = int(data[iR + 1:iC])
-        rotations[gn].pitch = int(data[iC + 1:iO])
-        rotations[gn].yaw = int(data[iO + 1:])
+        if iR != -1:
+            r = int(data[iR + 1:end])
+            rotations[gn].roll = r
+        if iC != -1:
+            rotations[gn].pitch = int(data[iC + 1:end])
+        if iO != -1:
+            rotations[gn].yaw = int(data[iO + 1:end])
 
     def update_placas(self):
         data = self.read_data()
@@ -275,7 +276,7 @@ if __name__ == '__main__':
     app = AppOgl(window, width=320, height=200)
     app.pack()
     app.animate=1
-    app.after(100, app.printContext)
+#    app.after(100, app.printContext)
 
     rolidos_str = []
     cabeceo_str = []
@@ -287,6 +288,15 @@ if __name__ == '__main__':
         frame = Frame(mainFrame)
         frame.pack(side=TOP)
         frames.append(frame)
+        r = StringVar()
+        r.set("Rolido : " + str(rotations[i].roll))
+        rolidos_str.append(r)
+        c = StringVar()
+        c.set("Cabeceo : " + str(rotations[i].pitch))
+        cabeceo_str.append(c)
+        o = StringVar()
+        o.set("Orientacion : " + str(rotations[i].yaw))
+        orientacion_str.append(o)
 
 
 
@@ -294,11 +304,11 @@ if __name__ == '__main__':
     for i in range(len(rotations)):
         lblGn = Label(frames[i], text="G" + str(i + 1))
         lblGn.grid(column=0, row=0, columnspan=3)
-        lblR = Label(frames[i], text="Rolido : " + str(rotations[i].roll))
+        lblR = Label(frames[i], textvariable = rolidos_str[i])
         lblR.grid(column=0, row=1)
-        lblC = Label(frames[i], text="Cabeceo : " + str(rotations[i].pitch))
+        lblC = Label(frames[i], textvariable = cabeceo_str[i])
         lblC.grid(column=1, row=1)
-        lblO = Label(frames[i], text="Orientacion : " + str(rotations[i].yaw))
+        lblO = Label(frames[i], textvariable = orientacion_str[i])
         lblO.grid(column=2, row=1)
 
     while True:
@@ -318,12 +328,13 @@ if __name__ == '__main__':
         #     rotations[dataList[0]].pitch = dataList[2]
         #     rotations[dataList[0]].yaw = dataList[3]
 
+        sr.read_data()
         sr.update_placas()
+
         for i in range(len(rotations)):
-            lblGn.config(text="G" + str(i+1))
-            lblR.config(text="Rolido : " + str(rotations[i].roll))
-            lblC.config(text="Cabeceo : " + str(rotations[i].pitch))
-            lblO.config(text="Orientacion : " + str(rotations[i].yaw))
+            rolidos_str[i].set("Rolido : " + str(rotations[i].roll))
+            cabeceo_str[i].set("Cabeceo : " + str(rotations[i].pitch))
+            orientacion_str[i].set("Orientacion : " + str(rotations[i].yaw))
         # for event in pygame.event.get():
         #     if event.type == pygame.QUIT:
         #         pygame.quit()
