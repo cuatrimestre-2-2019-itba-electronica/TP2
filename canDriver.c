@@ -168,9 +168,9 @@ void canDriverInit(int msk, int fltr){
 
 	canDriverBitModify(CANINTE,RX0IE_MASK|TX0IE_MASK,RX0IE_DATA(1)|TX0IE_DATA(0));//interrupcion mensage valido llego
 
-	//canDriverBitModify(CANCTRL,REQOP_MASK|OSM_MASK,REQOP_DATA(NORMAL)|OSM_DATA(0));//modo normal
+	canDriverBitModify(CANCTRL,REQOP_MASK|OSM_MASK,REQOP_DATA(NORMAL)|OSM_DATA(0));//modo normal
 
-	canDriverBitModify(CANCTRL,REQOP_MASK|OSM_MASK,REQOP_DATA(LOOPBACK)|OSM_DATA(0));
+	//canDriverBitModify(CANCTRL,REQOP_MASK|OSM_MASK,REQOP_DATA(LOOPBACK)|OSM_DATA(0));
 
 
 

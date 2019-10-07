@@ -11,6 +11,7 @@
 #include "FXOS8700CQ.h"
 #include <stdbool.h>
 #include "i2c.h"
+#include <math.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -49,6 +50,12 @@ bool FXOS_read_from_register(uint8_t FXOS_register, uint8_t * rx_buf, uint8_t rx
 //tx_buf: buffer donde se encuentran los bytes a enviar.
 //tx_buf_len: longitud del buffer.
 bool FXOS_write_to_register(uint8_t FXOS_register, uint8_t * tx_buf, uint8_t tx_buf_len);
+
+static int16_t get_roll(FXOS_data_t* parameters);
+
+static int16_t get_pitch(FXOS_data_t* parameters);
+
+static int16_t get_orientation(FXOS_data_t* parameters);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -151,7 +158,7 @@ void FXOS_init()
 
 }
 
-FXOS_data_t FXOS_get_data()
+FXOS_data_t FXOS_get_data_cartesian()
 {
 	uint8_t Buffer[FXOS8700CQ_READ_LEN];
 	FXOS_read_from_register(FXOS8700CQ_STATUS, Buffer, FXOS8700CQ_READ_LEN);
@@ -167,6 +174,15 @@ FXOS_data_t FXOS_get_data()
 	data.magnet.y = (Buffer[9] << 8) | Buffer[10];
 	data.magnet.z = (Buffer[11] << 8) | Buffer[12];
 	return data;
+}
+
+void FXOS_get_data_polar(FXOS_data_polar_t* polar_data){
+	FXOS_data_t data;
+	data = FXOS_get_data_cartesian();
+	polar_data->pitch = get_pitch(&data);
+	polar_data->roll = get_roll(&data);
+	polar_data->orientation = get_orientation(&data);
+
 }
 
 /*******************************************************************************
@@ -198,6 +214,91 @@ bool FXOS_write_to_register(uint8_t FXOS_register, uint8_t * tx_buf, uint8_t tx_
 	}
 
 	I2C_TXRX_master_blocking(I2C0, FXOS8700CQ_ADDRESS, &tx_buf_2_write, tx_buf_len + 1, 0, 0);
+}
+
+
+int16_t get_pitch(FXOS_data_t* parameters){
+	int16_t pitch_angle;
+    if (parameters->accel.y != 0) {
+        //double hip = (sqrt(pow(parameters->accel.x, 2) + pow(parameters->accel.y, 2)));
+        pitch_angle = 180*atan(fabs(parameters->accel.z) / fabs(parameters->accel.y))/3.14;
+    }
+    else
+    	pitch_angle = 0;
+
+    if (parameters->accel.z > 0){
+        	if (parameters->accel.y > 0)
+        		pitch_angle = 90 - pitch_angle;
+        	else if (parameters->accel.y < 0)
+        		pitch_angle = pitch_angle - 90;
+        }
+        if (parameters->accel.z < 0){
+        	if (parameters->accel.y > 0)
+        		pitch_angle = 90 + pitch_angle;
+        	else if (parameters->accel.y < 0)
+        		pitch_angle = -90 - pitch_angle;
+        }
+    return pitch_angle;
+}
+
+
+int16_t get_roll(FXOS_data_t* parameters){
+	int16_t roll_angle;
+    if (parameters->accel.x != 0) {
+        //double hip = (sqrt(pow(parameters->accel.y, 2) + pow(parameters->accel.z, 2)));
+        roll_angle = 180*atan(fabs(parameters->accel.z) / fabs(parameters->accel.x))/3.14;
+    }
+    else{
+    	if (parameters->accel.z > 0)
+    		roll_angle = 0;
+    	if (parameters->accel.z < 0)
+    		roll_angle = 180;
+    }
+
+
+    if (parameters->accel.z > 0){
+    	if (parameters->accel.x > 0)
+    		roll_angle = 90 - roll_angle;
+    	else if (parameters->accel.x < 0)
+    		roll_angle = roll_angle - 90;
+    }
+    if (parameters->accel.z < 0){
+    	if (parameters->accel.x > 0)
+    		roll_angle = 90 + roll_angle;
+    	else if (parameters->accel.x < 0)
+    		roll_angle = -90 - roll_angle;
+    }
+
+    return roll_angle;
+}
+
+
+int16_t get_orientation(FXOS_data_t* parameters){
+	int16_t orientation_angle;
+    if (parameters->magnet.x != 0) {
+        //double hip = (sqrt(pow(parameters->accel.y, 2) + pow(parameters->accel.z, 2)));
+    	orientation_angle = 180*atan(fabs(parameters->magnet.x) / fabs(parameters->magnet.y))/3.14;
+    }
+    else{
+    	if (parameters->magnet.y > 0)
+    		orientation_angle = 0;
+    	if (parameters->magnet.y < 0)
+    		orientation_angle = 180;
+    }
+
+    if (parameters->magnet.y < 0){
+    	if (parameters->magnet.x > 0)
+    		orientation_angle = orientation_angle;
+    	else if (parameters->magnet.x < 0)
+    		orientation_angle = -orientation_angle;
+    }
+    else if (parameters->magnet.y > 0){
+    	if(parameters->magnet.x > 0)
+    		orientation_angle = 180 + orientation_angle;
+    	else if (parameters->magnet.x < 0)
+    		orientation_angle = -180 - orientation_angle;
+    }
+    return orientation_angle;
 }
 
 

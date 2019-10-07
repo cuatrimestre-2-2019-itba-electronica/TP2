@@ -1,8 +1,8 @@
 #ifndef _CANDRIVER_H_
 #define _CANDRIVER_H_
 
-#include <stdbool.h>
-#include<stdint.h>
+//#include <stdbool.h>
+//#include<stdint.h>
 
 #include"canStruct.h"
 

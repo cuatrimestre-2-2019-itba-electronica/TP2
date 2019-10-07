@@ -44,6 +44,14 @@ typedef struct
 	FXOS_accel_data_t  accel;
 } FXOS_data_t;
 
+
+typedef struct
+{
+	int16_t roll;
+	int16_t pitch;
+	int16_t orientation;
+} FXOS_data_polar_t;
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -58,7 +66,10 @@ typedef struct
 
 void FXOS_init();
 
-FXOS_data_t	FXOS_get_data();
+FXOS_data_t	FXOS_get_data_cartesian();
+void FXOS_get_data_polar(FXOS_data_polar_t* polar_data);
+void int2chars (int number, char*); //pasa el angulo (int) a un arreglo de chars
+
 
 /*******************************************************************************
  ******************************************************************************/

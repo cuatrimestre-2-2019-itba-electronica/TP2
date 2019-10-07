@@ -34,7 +34,7 @@
 
 #define IRQ_CAN		PORTNUM2PIN(PB,2)
 
-
+#define PIN_DEBUG PORTNUM2PIN(PC,9)
 
 #define LED_ACTIVE      LOW
 

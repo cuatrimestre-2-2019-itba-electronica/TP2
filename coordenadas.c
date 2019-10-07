@@ -15,6 +15,7 @@
 static coordenadasCan buf[COORDENADAS_BUFF_SIZE];
 static coordBuf_handle_t circRes;
 static void coordenadasArray2Struct(coordenadasCan * coord,char * data,int size,int id);
+
 void coordenadasInit(void){
 	canDriverInit(0x7F8, 0x100);
 	circRes=coordBuffCirc_init(buf, COORDENADAS_BUFF_SIZE);
@@ -52,6 +53,7 @@ static void coordenadasArray2Struct(coordenadasCan * coord,char * data,int size,
 	coord->Grupo[0]='G';
 	coord->Grupo[1]=(id & 0X0FF)+'0';
 	coord->size=size-1;
+	coord->type=data[0];
 
 	for(int i=0;i<coord->size;i++){
 		coord->data[i]=data[i+1];
